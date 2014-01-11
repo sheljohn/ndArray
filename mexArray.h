@@ -279,6 +279,7 @@ public:
 	inline const unsigned* strides() const { return m_strides; }
 	inline unsigned stride( unsigned n ) const { return m_strides[ n % N ]; }
 	inline unsigned numel() const { return m_numel; }
+	inline unsigned ndims() const { return N; }
 
 
 
