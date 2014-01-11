@@ -1,11 +1,11 @@
-#ifndef __MEX_ARRAYS__
-#define __MEX_ARRAYS__
+#ifndef __MEX_ARRAY__
+#define __MEX_ARRAY__
 
-//=================================================
-// @file         mex_arrays.h
+//================================================
+// @file         mexArray.h
 // @author       Jonathan Hadida, Oxford DTC
 // @contact      Jonathan.hadida [at] dtc.ox.ac.uk
-//=================================================
+//================================================
 
 #include <iostream>
 #include <cstdlib>
@@ -313,6 +313,6 @@ protected:
 
 
 // Include implementation
-#include "mex_arrays.hpp"
+#include "mexArray.hpp"
 
 #endif

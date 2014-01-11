@@ -1,4 +1,4 @@
 MexArray
 ========
 
-Mex Arrays
+Documentation coming soon.

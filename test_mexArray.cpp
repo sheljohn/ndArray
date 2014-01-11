@@ -1,4 +1,4 @@
-#include "test_mex_arrays.h"
+#include "test_mexArray.h"
 
 void mexFunction(	int nargout, mxArray *out[],
 					int nargin, const mxArray *in[] )
