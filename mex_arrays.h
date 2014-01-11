@@ -21,6 +21,7 @@
 
 #include "mex.h"
 
+// Comment this to gain a tiny bit of speed
 #define MEX_ARRAY_SAFE_ACCESS
 
 // Protect 1D access
@@ -96,6 +97,16 @@ template <> const mxClassID mx_type<const double>::id = mxDOUBLE_CLASS;
 
 /**
  * Convert nd coordinates to 1d index.
+ * Two main variants are given:
+ * - Taking an ARRAY as coordinates (size input by template)
+ * - Taking a VA_LIST as a list of coordinate inputs (cf 
+ * operator() below).
+ *
+ * A few template specializations are provided for small dimensions
+ * in order to sightly increase speed. Generally speaking, any recent
+ * compiler should be trusted to optimize the for-loops for small 
+ * dimensions. Typically, modern compilers will unroll the loop if
+ * it runs only for a few statically defined cycles.
  */
 template <unsigned N>
 unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *strides )
@@ -163,11 +174,14 @@ struct fake_array
 // ------------------------------------------------------------------------
 
 /**
- * 
+ * Dummy deleter functor.
+ * This does nothing to the input pointer; can be used safely with
+ * shared pointers for either statically allocated memory (fixed-size
+ * array for example) or externally managed memory (Matlab in/out).
  */
 template <typename T>
 struct no_delete
-{ inline void operator() ( T* ptr ) const { ptr = nullptr; } };
+{ inline void operator() ( T* ptr ) const {} };
 
 
 
@@ -177,7 +191,11 @@ struct no_delete
 
 
 /**
- * nd array class.
+ * n-dimensional array.
+ * NOTE: T can be CONST (underlying elements non-assignable: 
+ * suitable for Matlab inputs for instance), or NON-CONST
+ * (underlying elements assignable, suitable for Matlab 
+ * outputs or dynamically allocated memory for instance).
  */
 template <typename T, unsigned N>
 class ndArray
@@ -195,19 +213,20 @@ public:
 	static constexpr bool is_mutable = !std::is_const<T>::value;
 
 	// Constructors
-	ndArray() { clear(); }
+	ndArray() { reset(); }
 	ndArray( const mxArray *A ) { assign(A); }
 	ndArray( pointer ptr, const unsigned *size, bool manage ) { assign(ptr,size,manage); }
 
 
 	// Copy constructor
-	ndArray( const self& other );
+	ndArray( const self& other ) { operator=(other); }
+	self& operator= ( const self& other );
 
-	// Check validity
+	// Check pointer validity
 	inline bool empty() const { return !((bool) m_data); }
 	inline operator bool() const { return m_data; }
 
-	// Print info
+	// Print array dimensions
 	void info() const;
 
 
@@ -221,12 +240,12 @@ public:
 	void reset();
 
 
-	// Assign
+	// Assign either an mxArray or a pointer
 	void assign( const mxArray *A );
 	void assign( pointer ptr, const unsigned *size, bool manage );
 
 
-	// Copy from other instance
+	// Copy from another array
 	template <typename U>
 	void copy( const ndArray<U,N>& other );
 
@@ -275,7 +294,7 @@ public:
 
 
 
-private:
+protected:
 
 	void assign_shared( pointer ptr, bool manage );
 

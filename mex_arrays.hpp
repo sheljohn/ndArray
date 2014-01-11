@@ -1,16 +1,11 @@
 
-
-
-        /********************     **********     ********************/
-        /********************     **********     ********************/
-
-
-
 /**
- * 
+ * Assignment operator.
+ * Performs a shallow copy of the other instance.
+ * For deep-copies, see copy() below.
  */
 template <typename T, unsigned N>
-ndArray<T,N>::ndArray( const self& other )
+ndArray<T,N>& ndArray<T,N>::operator=( const self& other )
 {
 	if ( other.m_data != m_data )
 	{
@@ -23,13 +18,26 @@ ndArray<T,N>::ndArray( const self& other )
 		std::copy_n( other.m_size, N, m_size );
 		std::copy_n( other.m_strides, N, m_strides );
 	}
+
+	return *this;
 }
 
 // ------------------------------------------------------------------------
 
 /**
- * typename std::enable_if< 
-	self::is_mutable && std::is_assignable<T,U>::value, void >::type
+ * Performs a deep-copy of another instance with possibly 
+ * different value-type. Deep copies are allowed only if 
+ * the pointer type is non-const (otherwise no assignment 
+ * is possible). 
+ *
+ * To perform the copy, a new memory allocation is requested 
+ * to store as many values as other.m_numel; the current 
+ * instance initiates the management of this new memory. 
+ * 
+ * Note that subsequent shallow copies (see assignment operator)
+ * will simply share the management of this memory (reference
+ * counting). Note also that a simple value-cast is performed
+ * on the values of other; this code might generate warnings.
  */
 template <typename T, unsigned N>
 template <typename U>
@@ -49,7 +57,11 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 // ------------------------------------------------------------------------
 
 /**
- * 
+ * Reset the shared pointer.
+ * This will trigger the deletion of the underlying memory if
+ * m_data is unique (m_data.use_count() == 1). Note that if the
+ * data was assigned with the management flag set to false, the
+ * deleter (no_delete functor) will NOT deallocate the memory.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::clear()
@@ -60,7 +72,8 @@ void ndArray<T,N>::clear()
 // ------------------------------------------------------------------------
 
 /**
- * 
+ * More thorough cleanup of this instance. Reset calls clear()
+ * defined previously, and sets all other attributes to 0.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::reset()
@@ -74,7 +87,21 @@ void ndArray<T,N>::reset()
 // ------------------------------------------------------------------------
 
 /**
- * 
+ * Internal method (private) to assign the shared pointer.
+ * The size is assumed to be taken care of by the public 
+ * assign methods (see below); only the pointer, it's length
+ * and the flag 'manage' are necessary.
+ *
+ * The flag 'manage' allows to specify whether or not the
+ * shared pointer should deallocate the shared memory when 
+ * the last refering instance is destroyed. If true, the 
+ * default deleter std::default_delete will be assigned to
+ * the shared pointer. Note that this deleter ONLY releases
+ * memory allocated using NEW; DO NOT use malloc/calloc or
+ * variants. If false, the dummy deleter no_delete is given
+ * instead; this deleter will NOT release the memory when the
+ * last shared pointer is destroyed. Use only with either 
+ * externally managed (eg Matlab) or static allocations.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
@@ -88,7 +115,27 @@ void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
 // ------------------------------------------------------------------------
 
 /**
+ * Assign from an mxArray.
+ * This will simply HANDLE the memory allocated by the mxArray,
+ * not manage it; no deep-copy will be performed, no dynamic
+ * allocation will occur, and no deallocation will happen when
+ * this instance (or any shallow copy) is destroyed. 
  * 
+ * Use this method to handle Matlab inputs, eg: 
+ * 	
+ * 	ndArray<const double,2> matrix( plhs[0] );
+ *  (note that T is a const type to preserve input data)
+ *  
+ * or to handle Matlab outputs, eg: 
+ * 
+ * 	const int size[5] = {10,11,12,13,14};
+ * 	prhs[0] = mxCreateNumericArray(
+ * 		5, size, mx_type<float>::id, mxREAL );
+ * 	ndArray<float,5> matrix( prhs[0] );
+ * 	(note that the allocated array is assigned to prhs first)
+ *
+ * If the input type or number of dimensions does not correspond
+ * to the template parameters, exceptions are raised.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::assign( const mxArray *A )
@@ -110,7 +157,20 @@ void ndArray<T,N>::assign( const mxArray *A )
 
 
 /**
- * 
+ * Assign from pointer and size.
+ * The most important input is the management flag.
+ *
+ * If manage = true, the internal shared pointer m_data
+ * will assume ownership of the memory pointed by ptr, and
+ * try to release it using ::operator delete[] when the last
+ * refering instance gets destroyed. Should ptr be dynamically
+ * allocated, it is therefore CRUCIAL that the operator NEW 
+ * would be used, and NOT C variants like malloc/calloc/etc.
+ *
+ * If manage = false, a dummy deleter (no_delete functor) is
+ * passed to the shared pointer m_data; nothing will happen
+ * to the memory pointed by ptr when the last refering instance
+ * gets destroyed.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )
@@ -137,7 +197,8 @@ void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )
 // ------------------------------------------------------------------------
 
 /**
- * 
+ * Simply prints information about the dimensions of the 
+ * n-dimensional array (size & number of elements).
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::info() const
@@ -152,10 +213,3 @@ void ndArray<T,N>::info() const
 	else
 		printf("Empty %u-dimensional array.\n", N);
 }
-
-
-
-        /********************     **********     ********************/
-        /********************     **********     ********************/
-
-
