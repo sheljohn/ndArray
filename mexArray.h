@@ -113,13 +113,7 @@ unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *st
 	register unsigned ind = 0;
 
 	for (unsigned i = 0; i < N; ++i) 
-	{
-#ifdef MEX_ARRAY_SAFE_ACCESS
-	ind += ( subs[i] % size[i] ) * strides[i];
-#else
-	ind += subs[i] * strides[i];
-#endif
-	}
+		ind += MEX_ARRAY_PROTECT(subs[i],size[i]) * strides[i];
 
 	return ind;
 }
@@ -130,13 +124,7 @@ unsigned sub2ind( va_list& vl, const unsigned *size, const unsigned *strides )
 	register unsigned ind = 0;
 
 	for (unsigned i = 1; i < N; ++i) 
-	{
-#ifdef MEX_ARRAY_SAFE_ACCESS
-	ind += ( va_arg(vl,unsigned) % size[i] ) * strides[i];
-#else
-	ind += va_arg(vl,unsigned) * strides[i];
-#endif
-	}
+		ind += MEX_ARRAY_PROTECT(va_arg(vl,unsigned),size[i]) * strides[i];
 
 	va_end(vl); return ind;
 }
