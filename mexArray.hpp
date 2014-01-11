@@ -32,12 +32,12 @@ ndArray<T,N>& ndArray<T,N>::operator=( const self& other )
  *
  * To perform the copy, a new memory allocation is requested 
  * to store as many values as other.m_numel; the current 
- * instance initiates the management of this new memory. 
+ * instance starts takes ownership of this new memory. 
  * 
  * Note that subsequent shallow copies (see assignment operator)
- * will simply share the management of this memory (reference
- * counting). Note also that a simple value-cast is performed
- * on the values of other; this code might generate warnings.
+ * will simply share this ownership (reference counting). 
+ * Note also that this code might generate warnings because of
+ * the value-cast performed on the values of other.
  */
 template <typename T, unsigned N>
 template <typename U>
@@ -57,11 +57,11 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 // ------------------------------------------------------------------------
 
 /**
- * Reset the shared pointer.
+ * Reset shared pointer.
  * This will trigger the deletion of the underlying memory if
  * m_data is unique (m_data.use_count() == 1). Note that if the
- * data was assigned with the management flag set to false, the
- * deleter (no_delete functor) will NOT deallocate the memory.
+ * data was assigned with 'manage' set to false (see below), 
+ * the deleter(no_delete functor) will NOT release the memory.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::clear()
@@ -72,8 +72,8 @@ void ndArray<T,N>::clear()
 // ------------------------------------------------------------------------
 
 /**
- * More thorough cleanup of this instance. Reset calls clear()
- * defined previously, and sets all other attributes to 0.
+ * More thorough cleanup. Calls clear() (see above), and sets 
+ * all the rest to 0.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::reset()
@@ -87,21 +87,24 @@ void ndArray<T,N>::reset()
 // ------------------------------------------------------------------------
 
 /**
- * Internal method (private) to assign the shared pointer.
- * The size is assumed to be taken care of by the public 
- * assign methods (see below); only the pointer, it's length
- * and the flag 'manage' are necessary.
+ * Internal method (protected) to assign the shared pointer.
+ * Dimensions are assumed to be taken care of by the public 
+ * assign variants (see below); only the pointer, it's length
+ * and the flag 'manage' are required here.
  *
- * The flag 'manage' allows to specify whether or not the
- * shared pointer should deallocate the shared memory when 
- * the last refering instance is destroyed. If true, the 
- * default deleter std::default_delete will be assigned to
- * the shared pointer. Note that this deleter ONLY releases
- * memory allocated using NEW; DO NOT use malloc/calloc or
- * variants. If false, the dummy deleter no_delete is given
- * instead; this deleter will NOT release the memory when the
- * last shared pointer is destroyed. Use only with either 
- * externally managed (eg Matlab) or static allocations.
+ * 'manage' allows to specify whether or not the shared pointer 
+ * should release the memory when the last refering instance is 
+ * destroyed. 
+ * 
+ * If true, the default deleter std::default_delete will be 
+ * assigned to the shared pointer. Note that this deleter releases 
+ * memory allocated USING NEW ONLY; 
+ * 	DO NOT use malloc/calloc or other C allocation variants. 
+ * 
+ * If false, the deleter no_delete is given instead; this will NOT 
+ * release the memory when the last refering instance is destroyed. 
+ * Use only with either externally managed (eg Matlab) or static 
+ * allocations.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
@@ -158,19 +161,18 @@ void ndArray<T,N>::assign( const mxArray *A )
 
 /**
  * Assign from pointer and size.
- * The most important input is the management flag.
  *
- * If manage = true, the internal shared pointer m_data
+ * If manage == true, the internal shared pointer m_data
  * will assume ownership of the memory pointed by ptr, and
- * try to release it using ::operator delete[] when the last
- * refering instance gets destroyed. Should ptr be dynamically
- * allocated, it is therefore CRUCIAL that the operator NEW 
- * would be used, and NOT C variants like malloc/calloc/etc.
+ * try to release it using delete[] when the last refering 
+ * instance gets destroyed. 
+ * If ptr is dynamically allocated, make sure that the 
+ * allocation is performed with NEW, and NOT C variants 
+ * like malloc/calloc/etc.
  *
- * If manage = false, a dummy deleter (no_delete functor) is
- * passed to the shared pointer m_data; nothing will happen
- * to the memory pointed by ptr when the last refering instance
- * gets destroyed.
+ * If manage == false, a dummy deleter (no_delete functor) is
+ * passed to the shared pointer; nothing happens to the memory 
+ * pointed by ptr when the last refering instance gets destroyed.
  */
 template <typename T, unsigned N>
 void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )

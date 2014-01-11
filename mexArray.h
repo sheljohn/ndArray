@@ -97,16 +97,15 @@ template <> const mxClassID mx_type<const double>::id = mxDOUBLE_CLASS;
 
 /**
  * Convert nd coordinates to 1d index.
- * Two main variants are given:
+ * Two main variants are providd:
  * - Taking an ARRAY as coordinates (size input by template)
  * - Taking a VA_LIST as a list of coordinate inputs (cf 
  * operator() below).
  *
  * A few template specializations are provided for small dimensions
- * in order to sightly increase speed. Generally speaking, any recent
- * compiler should be trusted to optimize the for-loops for small 
- * dimensions. Typically, modern compilers will unroll the loop if
- * it runs only for a few statically defined cycles.
+ * to increase speed  slightly. Any modern compiler should be trusted 
+ * to optimize the for-loops for low N anyway (eg loop unrolling for
+ * low statically defined number of cycles).
  */
 template <unsigned N>
 unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *strides )
@@ -155,7 +154,7 @@ sub2ind<2>( const unsigned *subs, const unsigned *size, const unsigned* )
 // ------------------------------------------------------------------------
 
 /**
- * Define a singleton to handle access errors safely.
+ * Simple singleton.
  */
 template <typename T> struct singleton { static T instance; };
 template <typename T> T singleton<T>::instance = T();
@@ -163,7 +162,8 @@ template <typename T> T singleton<T>::instance = T();
 // ------------------------------------------------------------------------
 
 /**
- * Create fake array to protect against access of empty container.
+ * (obsolete)
+ * Create fake array to protect against empty shared pointer.
  */
 template <typename T>
 struct fake_array
@@ -175,9 +175,9 @@ struct fake_array
 
 /**
  * Dummy deleter functor.
- * This does nothing to the input pointer; can be used safely with
- * shared pointers for either statically allocated memory (fixed-size
- * array for example) or externally managed memory (Matlab in/out).
+ * This litterally does nothing to the input pointer; it can be used 
+ * safely with shared pointers for either statically allocated memory 
+ * (eg fixed-size arrays) or externally managed memory (eg Matlab in/out).
  */
 template <typename T>
 struct no_delete
@@ -285,7 +285,7 @@ public:
 
 
 
-	// Access dimensions
+	// Dimensions
 	inline const unsigned* size() const { return m_size; }
 	inline unsigned size( unsigned n ) const { return m_size[ n % N ]; }
 	inline const unsigned* strides() const { return m_strides; }
