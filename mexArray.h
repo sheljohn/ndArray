@@ -244,7 +244,7 @@ public:
 
 
 	// 1D access
-	reference operator[] ( unsigned n ) const 
+	inline reference operator[] ( unsigned n ) const 
 		{ return data()[MEX_ARRAY_PROTECT(n,N)]; }
 
 	// ND access
