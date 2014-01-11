@@ -97,15 +97,15 @@ template <> const mxClassID mx_type<const double>::id = mxDOUBLE_CLASS;
 
 /**
  * Convert nd coordinates to 1d index.
- * Two main variants are providd:
+ * Two main variants are provided:
  * - Taking an ARRAY as coordinates (size input by template)
  * - Taking a VA_LIST as a list of coordinate inputs (cf 
  * operator() below).
  *
- * A few template specializations are provided for small dimensions
- * to increase speed  slightly. Any modern compiler should be trusted 
- * to optimize the for-loops for low N anyway (eg loop unrolling for
- * low statically defined number of cycles).
+ * A few template specializations are provided as well for 
+ * low dimensions (increased speek). But any modern compiler should 
+ * be trusted to optimize the for-loops for low N anyway (eg loop 
+ * unrolling for low statically defined number of cycles).
  */
 template <unsigned N>
 unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *strides )
