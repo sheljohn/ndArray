@@ -18,6 +18,7 @@
 #include <memory>
 #include <algorithm>
 #include <type_traits>
+#include <initializer_list>
 
 #include "mex.h"
 
@@ -248,8 +249,17 @@ public:
 		{ return data()[ MEX_ARRAY_PROTECT(n,N) ]; }
 
 	// ND access
-	reference operator[] ( const unsigned *subs ) const
+	reference operator() ( const unsigned *subs ) const
 		{ return data()[ sub2ind<N>(subs, m_size, m_strides) ]; }
+
+	reference operator() ( std::initializer_list<unsigned> subs ) const
+		{
+#ifdef MEX_ARRAY_SAFE_ACCESS
+			if ( subs.size() != N ) 
+				throw new std::length_error("Invalid coordinates length.");
+#endif
+			return data()[ sub2ind<N>(subs.begin(), m_size, m_strides) ];
+		}
 
 	// Coordinates access
 	reference operator() ( unsigned i, ... ) const
