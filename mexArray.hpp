@@ -158,7 +158,6 @@ void ndArray<T,N>::assign( const mxArray *A )
 
 // ------------------------------------------------------------------------
 
-
 /**
  * Assign from pointer and size.
  *
