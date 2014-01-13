@@ -27,7 +27,7 @@ The `ndArray` template class requires **two** template parameters:
 
 Once the dimensionality of an array (`N`) is set, it cannot be modified, so you'll have to declare several arrays to deal with 2D and 3D matrices for example. The members of `ndArray<T,N>` are:
 - `unsigned m_numel`: the number of elements stored in the array;
-- `unsigned m_size[N]`: the dimensions of the array (similar to matlab `size()` function);
+- `unsigned m_size[N]`: the dimensions of the array (similar to Matlab's `size()` function);
 - `unsigned m_strides[N]`: the index-offsets in each dimension, typcially `[1 cumprod(size(1:N-1))]`;
 - `std::shared_ptr<T>`: the actual data, stored as a plain 1D array of length `m_numel`.
 
@@ -39,28 +39,28 @@ The [STL implementation](http://www.cplusplus.com/reference/memory/shared_ptr/) 
 
 There are **four possible ways** to assign the contents of a `ndArray`:
 
-1. `assign( const mxArray* )`: using the method `assign` with an `mxArray` (either a Matlab input or output). The memory allocation corresponding to a Matlab matrix **will not  be managed** by the shared pointer. Note that if the `mxArray` has the wrong dimensions or wrong type, an exception will be raised.
-2. `assign( pointer, const unsigned*, bool )`: using the method `assign` with a pointer (`T*`), a size (unsigned array) and a boolean flag that specifies whether or not the corresponding memory should be managed. If true, the default deleter `std::default_delete` will be passed to the shared pointer (this releases memory allocated using `new` **only**, do NOT use `malloc` variants). If false, `no_delete` will be passed instead, which will prevent from deallocating static or externally managed memory.
-3. `operator= ( const ndArray<T,N>& )`: the assignment operator copies the contents of another instance of same type and same dimensions. Only a reference to the data is copied, not the data itself (**shallow copy**). The copy constructor uses this implementation.
-4. `copy( const ndArray<U,N>& )`: this performs a **deep copy** of an array of same dimensions and possibly different type. A new memory allocation is requested (and therefore managed) to store the copies. Note that deep copies are not possible if the value-type (`T`) is const-qualified.
+1. `assign( const mxArray* )`: with either a Matlab input or output. The memory allocation corresponding to a Matlab matrix **will not  be managed** by the shared pointer. Note that if the `mxArray` has the wrong number of dimensions or wrong type, an exception will be raised.
+2. `assign( pointer, const unsigned*, bool )`: with a pointer `T*`, an unsigned size array and a boolean flag that specifies whether or not the corresponding memory should be managed. If true, the default deleter `std::default_delete` will be passed to the shared pointer (this releases memory allocated using `new` **only**, do NOT use `malloc` variants). If false, `no_delete` will be passed instead, which will prevent from deallocating static or externally managed memory.
+3. `operator= ( const ndArray<T,N>& )`: the assignment operator copies the contents of another instance of same type and with same number of dimensions. Only a reference to the data is copied, not the data itself (**shallow copy**). The copy constructor uses this implementation, so you can safely return matrices after instanciating them inside a function without triggering a deep-copy of the underlying data (although it is always preferable to use input references in my opinion).
+4. `copy( const ndArray<U,N>& )`: this performs a **deep copy** of an array with same dimensionality and possibly different type. A new memory allocation is requested (and therefore managed) to store the copies if the number of elements in the current instance (`m_numel`) is different from that of the input to be copied. Note that deep copies are _not possible_ if the value-type `T` is const-qualified, an exception will be raised in this case.
 
 #### Accessing the data
 
-Data access is possible in **four ways** as well:
+The actual data can be accessed in **four possible ways** again:
 
 1. `operator[] (unsigned)`: access the matrix as a 1D array, with column-wise convention;
-2. `operator() ( const unsigned* )`: access the matrix with N-dimensional coordinates stored in an array (eg `{1,4,2,3,3}` for a 5D array);
-3. `operator() ( std::initializer_list<unsigned> )`: idem, but with an initializer list;
+2. `operator() ( const unsigned* )`: access the matrix with N-dimensional coordinates stored in an unsigned array (ie `unsigned size[5] = {1,4,2,3,3};` for a 5D array);
+3. `operator() ( std::initializer_list<unsigned> )`: idem, but with an initializer list (ie passing directly `{1,4,2,3,3}` as an input);
 4. `operator() ( unsigned, ... )`: access with N coordinate inputs (eg `M(1,4,2,3,3)`).
 
-Note that these methods are unsafe, and might segfault if:
+Note that these methods are _unsafe_, and will segfault if:
 
 - The underlying array has not been assigned;
 - The coordinates in methods 2 or 3 are not of length `N` (the third method will throw an exception in safe mode);
 - Not enough inputs are given in method 4;
 - Indexes are out of bounds in unsafe mode.
 
-The flag `MEX_ARRAY_SAFE_ACCESS` can be commented in the sources to increase speed slightly, although this should probably not be the bottleneck of your program.
+The flag `MEX_ARRAY_SAFE_ACCESS` can be commented in the sources to increase speed slightly (although this probably won't be the bottleneck of your program).
 
 #### Accessing dimensions
 
@@ -88,7 +88,7 @@ A very simple singleton construct is provided, simply use `singleton<T>::instanc
 
 ## Examples
 
-We provide two main examples of usage, in addition to the test file. As the library is quite small, and the code entirely commented, these examples are meant to give you a feel at what your program should look like if you decide to use it in your application, nothing more.
+Two main examples are provided (both can be compiled and run independently in the Matlab console), in addition to the test file. As the library is quite small, and the code entirely commented, these examples are only meant to give you a feel at what your program should look like if you should decide to use this library in your application.
 
 ### Handling an existing allocation
 
@@ -105,10 +105,12 @@ void mexFunction(	int nargout, mxArray *out[],
 	//////////////////////////////////////////////
 
 	// Instanciate a const double matrix
-	// NOTE the const type used with Matlab inputs
+	// NOTE: how we use a const type with the Matlab input
 	ndArray<const double,2> A;
 
-	// Get Matlab input
+	// Get Matlab's first input
+	// NOTE: an exception will be raised if the input is not two-dimensional (matrix)
+	//       or if the value type is not double.
 	MASSERT( nargin > 0, "One input expected." );
 	A.assign( in[0] );
 
@@ -126,9 +128,12 @@ void mexFunction(	int nargout, mxArray *out[],
 
 	// Create ndArray handler
 	const unsigned size[3] = { 5, 20, 3 };
-	ndArray<unsigned,3> B( static_alloc, size, false );
+	ndArray<unsigned,3> B( static_alloc, size, false ); 
+		// false because we don't want to manage static memory;
+		// any request to deallocate static_alloc would fail.
 
 	// Test an assignment
+	// NOTE: we're using the 4th way to access data here (cf documentation)
 	B( 3,11,0 ) = 42;
 }
 ```
@@ -149,6 +154,9 @@ void mexFunction(	int nargout, mxArray *out[],
 	const unsigned size[4] = {3,4,5,6};
 	const unsigned numel   = 3*4*5*6;
 	ndArray<short,4> A( new short[numel], size, true );
+		// true because this is a dynamic allocation, so it needs
+		// to be deleted at some point. The last refering instance
+		// will take care of deleting this memory automatically.
 
 	// Do something with it
 	for ( unsigned i1 = 0; i1 < size[0]; ++i1 )
@@ -174,13 +182,17 @@ void mexFunction(	int nargout, mxArray *out[],
 
 	*/
 	
-	// Crate new Matlab output
+	// Crate a new 4-dimensional Matlab output
+	// NOTE: look how mx_type can be used here
 	out[0] = mxCreateNumericArray( 4, (const int*) size, mx_type<short>::id, mxREAL );
 
 	// Assign output to new ndArray
+	// NOTE: if we want to assign the values of the output, the value type should NOT be const!
 	ndArray<short,4> B( out[0] );
 
-	// Deep copy of A without reallocation because they have the same dimensions
+	// Copy the values of A
+	// NOTE: because B was created with the same number of elements, 
+	// this will not incur any memory reallocation
 	B.copy( A );
 }
 ```
