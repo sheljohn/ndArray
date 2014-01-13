@@ -194,6 +194,11 @@ public:
 	typedef T value_type;
 	typedef T* pointer;
 	typedef T& reference;
+
+	typedef typename std::add_const<T>::type const_value;
+	typedef const_value* const_pointer;
+	typedef const_value& const_reference;
+
 	typedef std::shared_ptr<value_type> shared;
 	typedef ndArray<T,N> self;
 
@@ -256,6 +261,8 @@ public:
 			if ( subs.size() != N ) 
 				throw std::length_error("Invalid coordinates length.");
 #endif
+			// printf("%u\n", sub2ind<N>(subs.begin(), m_size, m_strides) );
+			// mexEvalString("drawnow;");
 			return data()[ sub2ind<N>(subs.begin(), m_size, m_strides) ];
 		}
 
@@ -268,12 +275,15 @@ public:
 
 
 	// Access data directly
+	inline const_pointer cdata() const { return m_data.get(); }
 	inline pointer data() const { return m_data.get(); }
 
-
 	// Iterators
-	inline pointer begin() { return data(); }
-	inline pointer end() { return data() + m_numel; }
+	inline const_pointer cbegin() const { return data(); }
+	inline const_pointer cend() const { return data() + m_numel; }
+
+	inline pointer begin() const { return data(); }
+	inline pointer end() const { return data() + m_numel; }
 
 
 

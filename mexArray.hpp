@@ -45,14 +45,22 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 {
 	if ( !std::is_const<T>::value )
 	{
-		// Create new allocation
-		assign( new T[ other.m_numel ], other.m_size, true );
+		// Create new allocation only if necessary
+		if ( other.m_numel == m_numel )
+		{
+			// Otherwise simply copy dimensions
+			std::copy_n( other.m_size, N, m_size );
+			std::copy_n( other.m_strides, N, m_strides );
+		}
+		else
+			assign( new T[ other.m_numel ], other.m_size, true );
 
 		// Copy data
-		auto dst = begin(); auto src = other.begin();
-		for ( ;src != other.end(); ++src, ++dst ) *dst = (T) *src;
+		auto dst = begin(); auto src = other.cbegin();
+		for ( ;src != other.cend(); ++src, ++dst )  *dst = (T) *src;
 	}
-	else throw std::logic_error("Const values cannot be assigned!");
+	else 
+		throw std::logic_error("Const values cannot be assigned!");
 }
 
 // ------------------------------------------------------------------------
@@ -179,9 +187,6 @@ void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )
 {
 	if ( ptr != data() )
 	{
-		// Clear contents
-		clear();
-
 		// Compute internal dimensions
 		m_numel = 1; 
 		for ( unsigned i = 0; i < N; ++i )
