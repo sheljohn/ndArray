@@ -43,7 +43,7 @@ template <typename T, unsigned N>
 template <typename U>
 void ndArray<T,N>::copy( const ndArray<U,N>& other )
 {
-	if ( self::is_mutable )
+	if ( !std::is_const<T>::value )
 	{
 		// Create new allocation
 		assign( new T[ other.m_numel ], other.m_size, true );
@@ -52,6 +52,7 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 		auto dst = begin(); auto src = other.begin();
 		for ( ;src != other.end(); ++src, ++dst ) *dst = (T) *src;
 	}
+	else throw std::logic_error("Const values cannot be assigned!");
 }
 
 // ------------------------------------------------------------------------
@@ -145,9 +146,9 @@ void ndArray<T,N>::assign( const mxArray *A )
 {
 	// Check dimensions and type
 	if ( ((unsigned) mxGetNumberOfDimensions(A)) != N )
-		throw new std::domain_error("Bad dimensions.");
+		throw std::domain_error("Bad dimensions.");
 	if ( mxGetClassID(A) != mx_type<T>::id )
-		throw new std::invalid_argument("Type mismatch.");	
+		throw std::invalid_argument("Type mismatch.");	
 
 	// Get input dimensions
 	const unsigned *size = (const unsigned*) mxGetDimensions(A);

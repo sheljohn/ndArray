@@ -199,8 +199,6 @@ public:
 
 
 
-	static constexpr bool is_mutable = !std::is_const<T>::value;
-
 	// Constructors
 	ndArray() { reset(); }
 	ndArray( const mxArray *A ) { assign(A); }
@@ -256,7 +254,7 @@ public:
 		{
 #ifdef MEX_ARRAY_SAFE_ACCESS
 			if ( subs.size() != N ) 
-				throw new std::length_error("Invalid coordinates length.");
+				throw std::length_error("Invalid coordinates length.");
 #endif
 			return data()[ sub2ind<N>(subs.begin(), m_size, m_strides) ];
 		}
