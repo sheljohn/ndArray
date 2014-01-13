@@ -261,8 +261,6 @@ public:
 			if ( subs.size() != N ) 
 				throw std::length_error("Invalid coordinates length.");
 #endif
-			// printf("%u\n", sub2ind<N>(subs.begin(), m_size, m_strides) );
-			// mexEvalString("drawnow;");
 			return data()[ sub2ind<N>(subs.begin(), m_size, m_strides) ];
 		}
 
