@@ -1,7 +1,7 @@
-MexArray
+MexArray (beta)
 ========
 
-_This program is in beta version and might fail at run-time or even at compile time depending on your compiler. It was tested on Ubuntu 12.04 with Matlab R2012a and g++ 4.6.3. Please feel free to report bugs to the email specified in the sources._
+_This program was tested on Ubuntu 12.04 with Matlab R2012a and g++ 4.6.3, but should be cross-platform. Feel free to report bugs to the email specified in the sources._
 
 MexArray is a single-header template C++11 library that defines a **generic n-dimensional array class** capable of handling both Matlab's `mxArray`s (mutable or not) and standard C++ allocations (both static and dynamic). It is designed to provide minimal (but useful) functionality and can be easily extended/built-on for any kind of application. It is released in the public domain and can therefore be used for open or closed source projects, commercial or not (read licence).
 
