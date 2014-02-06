@@ -249,7 +249,7 @@ public:
 
 	// 1D access
 	inline reference operator[] ( unsigned n ) const 
-		{ return data()[ MEX_ARRAY_PROTECT(n,N) ]; }
+		{ return data()[ MEX_ARRAY_PROTECT(n,m_numel) ]; }
 
 	// ND access
 	reference operator() ( const unsigned *subs ) const
