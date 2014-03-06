@@ -235,6 +235,10 @@ public:
 	// Assign either an mxArray or a pointer
 	void assign( const mxArray *A );
 	void assign( pointer ptr, const unsigned *size, bool manage );
+	
+	
+	// Swap contents with another array
+	void swap( self& other );
 
 
 	// Copy from another array
