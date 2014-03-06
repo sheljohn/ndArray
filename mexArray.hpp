@@ -1,4 +1,3 @@
-
 /**
  * Assignment operator.
  * Performs a shallow copy of the other instance.
@@ -46,14 +45,14 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 	if ( !std::is_const<T>::value )
 	{
 		// Create new allocation only if necessary
-		if ( other.m_numel == m_numel )
+		if ( other.numel() == m_numel )
 		{
 			// Otherwise simply copy dimensions
-			std::copy_n( other.m_size, N, m_size );
-			std::copy_n( other.m_strides, N, m_strides );
+			std::copy_n( other.size(), N, m_size );
+			std::copy_n( other.strides(), N, m_strides );
 		}
 		else
-			assign( new T[ other.m_numel ], other.m_size, true );
+			assign( new T[ other.numel() ], other.size(), true );
 
 		// Copy data
 		auto dst = begin(); auto src = other.cbegin();
@@ -91,6 +90,23 @@ void ndArray<T,N>::reset()
 	m_numel = 0;
 	std::fill_n( m_size, N, 0 );
 	std::fill_n( m_strides, N, 0 );
+}
+
+// ------------------------------------------------------------------------
+
+/**
+ * Swap contents with another ndArray.
+ */
+template <typename T, unsigned N>
+void ndArray<T,N>::swap( self& other )
+{
+	std::swap( m_numel, other.m_numel );
+	for ( unsigned i = 0; i < N; ++i )
+	{
+		std::swap( m_size[i], other.m_size[i] );
+		std::swap( m_strides[i], other.m_strides[i] );
+	}
+	m_data.swap( other.m_data );
 }
 
 // ------------------------------------------------------------------------
