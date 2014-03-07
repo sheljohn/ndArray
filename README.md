@@ -72,7 +72,7 @@ The underlying data can be iterated using the methods `data`, `begin` and `end`.
 - `begin()` as well, it is provided to match the standard in terms of iteration (random access iterator);
 - `end()` similarly returns a pointer to the element _past-the-end_ of the array.
  
-If the value-type is const qualified, then all the above methods return pointers to constant values. Alternatively for non-const arrays, explicitly constant variants are implemented provided as well (`cdata()`, `cbegin()` and `cend()`).
+If the value-type is const qualified, then all the above methods return pointers to constant values. Alternatively for non-const arrays, explicitly constant variants are implemented as well (`cdata()`, `cbegin()` and `cend()`).
 
 #### Accessing dimensions
 
