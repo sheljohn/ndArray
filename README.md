@@ -44,6 +44,8 @@ There are **four possible ways** to assign the contents of a `ndArray`:
 3. `operator= ( const ndArray<T,N>& )`: the assignment operator copies the contents of another instance of same type and with same number of dimensions. Only a reference to the data is copied, not the data itself (**shallow copy**). The copy constructor uses this implementation, so you can safely return matrices after instanciating them inside a function without triggering a deep-copy of the underlying data (although it is always preferable to use input references in my opinion).
 4. `copy( const ndArray<U,N>& )`: this performs a **deep copy** of an array with same dimensionality and possibly different type. A new memory allocation is requested (and therefore managed) to store the copies if the number of elements in the current instance (`m_numel`) is different from that of the input to be copied. Note that deep copies are _not possible_ if the value-type `T` is const-qualified, an exception will be raised in this case.
 
+Additionally, two arrays _of same type_ can be swapped without copy, using the method `swap( ndArray<T,N>& other )`.
+
 #### Accessing the data
 
 The actual data can be accessed in **four possible ways** again:
@@ -61,6 +63,16 @@ Note that these methods are _unsafe_, and will segfault if:
 - Indexes are out of bounds in unsafe mode.
 
 The flag `MEX_ARRAY_SAFE_ACCESS` can be commented in the sources to increase speed slightly (although this probably won't be the bottleneck of your program).
+
+#### Iterating over the data
+
+The underlying data can be iterated using the methods `data`, `begin` and `end`. Specifically:
+
+- `data()` returns a pointer to the first element of the array;
+- `begin()` as well, it is provided to match the standard in terms of iteration (random access iterator);
+- `end()` similarly returns a pointer to the element _past-the-end_ of the array.
+ 
+If the value-type is const qualified, then all the above methods return pointers to constant values. Alternatively for non-const arrays, explicitly constant variants are implemented provided as well (`cdata()`, `cbegin()` and `cend()`).
 
 #### Accessing dimensions
 
