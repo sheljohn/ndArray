@@ -1,8 +1,8 @@
-#ifndef __MEX_ARRAY__
-#define __MEX_ARRAY__
+#ifndef __ND_ARRAY__
+#define __ND_ARRAY__
 
 //================================================
-// @file         mexArray.h
+// @file         ndArray.h
 // @author       Jonathan Hadida, Oxford DTC
 // @contact      Jonathan.hadida [at] dtc.ox.ac.uk
 //================================================
@@ -20,16 +20,15 @@
 #include <type_traits>
 #include <initializer_list>
 
-#include "mex.h"
-
-// Comment this to gain a tiny bit of speed
-#define MEX_ARRAY_SAFE_ACCESS
+// Comment for (slightly) faster access
+#define ND_ARRAY_SAFE_ACCESS
+#define ND_ARRAY_USING_MATLAB
 
 // Protect 1D access
-#ifdef MEX_ARRAY_SAFE_ACCESS
-#define MEX_ARRAY_PROTECT(k,n) (k % n)
+#ifdef ND_ARRAY_SAFE_ACCESS
+	#define ND_ARRAY_PROTECT(k,n) (k % n)
 #else
-#define MEX_ARRAY_PROTECT(k,n) k
+	#define ND_ARRAY_PROTECT(k,n) k
 #endif
 
 
@@ -38,6 +37,11 @@
         /********************     **********     ********************/
 
 
+
+// Include Matlab Mex library
+#ifdef ND_ARRAY_USING_MATLAB
+
+#include "mex.h"
 
 /**
  * Convert numeric types to mex types.
@@ -89,6 +93,8 @@ template <> const mxClassID mx_type<const unsigned int>::id = mxUINT32_CLASS;
 template <> const mxClassID mx_type<const float>::id = mxSINGLE_CLASS;
 template <> const mxClassID mx_type<const double>::id = mxDOUBLE_CLASS;
 
+#endif
+
 
 
         /********************     **********     ********************/
@@ -102,11 +108,6 @@ template <> const mxClassID mx_type<const double>::id = mxDOUBLE_CLASS;
  * - Taking an ARRAY as coordinates (size input by template)
  * - Taking a VA_LIST as a list of coordinate inputs (cf 
  * operator() below).
- *
- * A few template specializations are provided as well for 
- * low dimensions (increased speek). But any modern compiler should 
- * be trusted to optimize the for-loops for low N anyway (eg loop 
- * unrolling for low statically defined number of cycles).
  */
 template <unsigned N>
 unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *strides )
@@ -114,7 +115,7 @@ unsigned sub2ind( const unsigned *subs, const unsigned *size, const unsigned *st
 	register unsigned ind = 0;
 
 	for (unsigned i = 0; i < N; ++i) 
-		ind += MEX_ARRAY_PROTECT(subs[i],size[i]) * strides[i];
+		ind += ND_ARRAY_PROTECT(subs[i],size[i]) * strides[i];
 
 	return ind;
 }
@@ -125,7 +126,7 @@ unsigned sub2ind( va_list& vl, const unsigned *size, const unsigned *strides )
 	register unsigned ind = 0;
 
 	for (unsigned i = 1; i < N; ++i) 
-		ind += MEX_ARRAY_PROTECT(va_arg(vl,unsigned),size[i]) * strides[i];
+		ind += ND_ARRAY_PROTECT(va_arg(vl,unsigned),size[i]) * strides[i];
 
 	va_end(vl); return ind;
 }
@@ -134,11 +135,20 @@ template <> inline unsigned
 sub2ind<0>( const unsigned*, const unsigned*, const unsigned* )
 	{ return 0; }
 template <> inline unsigned 
-sub2ind<1>( const unsigned *subs, const unsigned*, const unsigned* )
-	{ return *subs; }
+sub2ind<1>( const unsigned *subs, const unsigned *size, const unsigned *strides )
+	{ return 
+		ND_ARRAY_PROTECT(subs[0],size[0])*strides[0]; }
 template <> inline unsigned 
-sub2ind<2>( const unsigned *subs, const unsigned *size, const unsigned* )
-	{ return (subs[0] + subs[1]*size[0]); }
+sub2ind<2>( const unsigned *subs, const unsigned *size, const unsigned *strides )
+	{ return 
+		ND_ARRAY_PROTECT(subs[0],size[0])*strides[0] + 
+		ND_ARRAY_PROTECT(subs[1],size[1])*strides[1]; }
+template <> inline unsigned 
+sub2ind<3>( const unsigned *subs, const unsigned *size, const unsigned *strides )
+	{ return 
+		ND_ARRAY_PROTECT(subs[0],size[0])*strides[0] + 
+		ND_ARRAY_PROTECT(subs[1],size[1])*strides[1] + 
+		ND_ARRAY_PROTECT(subs[2],size[2])*strides[2]; }
 
 // ------------------------------------------------------------------------
 
@@ -151,26 +161,13 @@ template <typename T> T singleton<T>::instance = T();
 // ------------------------------------------------------------------------
 
 /**
- * (obsolete)
- * Create fake array to protect against empty shared pointer.
- */
-template <typename T>
-struct fake_array
-{
-	inline T& operator[] (unsigned n) const { return singleton<T>::instance; }
-};
-
-// ------------------------------------------------------------------------
-
-/**
  * Dummy deleter functor.
  * This litterally does nothing to the input pointer; it can be used 
  * safely with shared pointers for either statically allocated memory 
  * (eg fixed-size arrays) or externally managed memory (eg Matlab in/out).
  */
 template <typename T>
-struct no_delete
-{ inline void operator() ( T* ptr ) const {} };
+struct no_delete { inline void operator() ( T* ptr ) const {} };
 
 
 
@@ -184,7 +181,7 @@ struct no_delete
  * NOTE: T can be CONST (underlying elements non-assignable: 
  * suitable for Matlab inputs for instance), or NON-CONST
  * (underlying elements assignable, suitable for Matlab 
- * outputs or dynamically allocated memory for instance).
+ * outputs or owned memory allocations for instance).
  */
 template <typename T, unsigned N>
 class ndArray
@@ -206,7 +203,6 @@ public:
 
 	// Constructors
 	ndArray() { reset(); }
-	ndArray( const mxArray *A ) { assign(A); }
 	ndArray( pointer ptr, const unsigned *size, bool manage ) { assign(ptr,size,manage); }
 
 
@@ -221,6 +217,15 @@ public:
 	// Print array dimensions
 	void info() const;
 
+	
+#ifdef ND_ARRAY_USING_MATLAB
+
+	// Build from Matlab's mxArray
+	ndArray( const mxArray *A ) { assign(A); }
+	void assign( const mxArray *A );
+
+#endif
+
 
 
 	// ------------------------------------------------------------------------
@@ -233,7 +238,6 @@ public:
 
 
 	// Assign either an mxArray or a pointer
-	void assign( const mxArray *A );
 	void assign( pointer ptr, const unsigned *size, bool manage );
 	
 	
@@ -253,7 +257,7 @@ public:
 
 	// 1D access
 	inline reference operator[] ( unsigned n ) const 
-		{ return data()[ MEX_ARRAY_PROTECT(n,m_numel) ]; }
+		{ return data()[ ND_ARRAY_PROTECT(n,m_numel) ]; }
 
 	// ND access
 	reference operator() ( const unsigned *subs ) const
@@ -261,7 +265,7 @@ public:
 
 	reference operator() ( std::initializer_list<unsigned> subs ) const
 		{
-#ifdef MEX_ARRAY_SAFE_ACCESS
+#ifdef ND_ARRAY_SAFE_ACCESS
 			if ( subs.size() != N ) 
 				throw std::length_error("Invalid coordinates length.");
 #endif
@@ -272,7 +276,7 @@ public:
 	reference operator() ( unsigned i, ... ) const
 		{ 
 			va_list vl; va_start(vl,i); 
-			return data()[ i+sub2ind<N>(vl, m_size, m_strides) ]; 
+			return data()[ (i*m_strides[0]) + sub2ind<N>(vl, m_size, m_strides) ]; 
 		}
 
 
@@ -295,9 +299,9 @@ public:
 
 	// Dimensions
 	inline const unsigned* size() const { return m_size; }
-	inline unsigned size( unsigned n ) const { return m_size[ n % N ]; }
+	inline unsigned size( unsigned n ) const { return m_size[ ND_ARRAY_PROTECT(n,N) ]; }
 	inline const unsigned* strides() const { return m_strides; }
-	inline unsigned stride( unsigned n ) const { return m_strides[ n % N ]; }
+	inline unsigned stride( unsigned n ) const { return m_strides[ ND_ARRAY_PROTECT(n,N) ]; }
 	inline unsigned numel() const { return m_numel; }
 	inline unsigned ndims() const { return N; }
 
@@ -322,6 +326,6 @@ protected:
 
 
 // Include implementation
-#include "mexArray.hpp"
+#include "ndArray.hpp"
 
 #endif

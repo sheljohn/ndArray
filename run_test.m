@@ -1,13 +1,13 @@
 
 clear; clc;
 
-% Compile the test for Mex Arrays
-mex CXXFLAGS="\$CXXFLAGS -std=c++0x -Wall -O2" test_mexArray.cpp
+% Compile the test for ndArrays
+mex CXXFLAGS="\$CXXFLAGS -std=c++0x -Wall -O2" test_ndArray.cpp
 
 % Create test matrix
 A = toeplitz(1:32); 
 A = A(1:7,1:19);
 
     disp('Input the following matrix:'); A
-    B = test_mexArray(A);
+    B = test_ndArray(A);
     disp('The output array is:'); B

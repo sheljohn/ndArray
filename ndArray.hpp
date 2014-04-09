@@ -31,7 +31,7 @@ ndArray<T,N>& ndArray<T,N>::operator=( const self& other )
  *
  * To perform the copy, a new memory allocation is requested 
  * to store as many values as other.m_numel; the current 
- * instance starts takes ownership of this new memory. 
+ * instance takes ownership of this new memory. 
  * 
  * Note that subsequent shallow copies (see assignment operator)
  * will simply share this ownership (reference counting). 
@@ -142,6 +142,8 @@ void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
 
 // ------------------------------------------------------------------------
 
+#ifdef ND_ARRAY_USING_MATLAB
+
 /**
  * Assign from an mxArray.
  * This will simply HANDLE the memory allocated by the mxArray,
@@ -180,6 +182,8 @@ void ndArray<T,N>::assign( const mxArray *A )
 	// Call assign variant
 	assign( (pointer) mxGetData(A), size, false );
 }
+
+#endif
 
 // ------------------------------------------------------------------------
 

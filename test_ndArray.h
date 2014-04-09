@@ -1,13 +1,13 @@
-#ifndef __TEST_MEX_ARRAY__
-#define __TEST_MEX_ARRAY__
+#ifndef __TEST_ND_ARRAY__
+#define __TEST_ND_ARRAY__
 
 //================================================
-// @file         test_mexArray.h
+// @file         test_ndArray.h
 // @author       Jonathan Hadida, Oxford DTC
 // @contact      Jonathan.hadida [at] dtc.ox.ac.uk
 //================================================
 
-#include "mexArray.h"
+#include "ndArray.h"
 #include <initializer_list>
 
 
