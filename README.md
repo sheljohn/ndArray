@@ -3,7 +3,7 @@ ndArray (beta)
 
 _This program was tested on Ubuntu 12.04 with Matlab R2012a and g++ 4.6.3, but should be cross-platform. Feel free to report bugs to the email specified in the sources._
 
-MexArray is a single-header template C++11 library that defines a **generic n-dimensional array class** capable of handling both Matlab's `mxArray`s (mutable or not) and standard C++ allocations (both static and dynamic). It is designed to provide minimal (but useful) functionality and can be easily extended/built-upon for any kind of application. It is released in the public domain and can therefore be used for both open and closed source projects, whether commercial or not (cf licence).
+ndArray is a single-header template C++11 library that defines a **generic n-dimensional array class** capable of handling both Matlab's `mxArray`s (mutable or not) and standard C++ allocations (both static and dynamic). It is designed to provide minimal (but useful) functionality and can be easily extended/built-upon for any kind of application. It is released in the public domain and can therefore be used for both open and closed source projects, whether commercial or not (cf licence).
 
 ---
 
@@ -11,12 +11,12 @@ MexArray is a single-header template C++11 library that defines a **generic n-di
 
 The library implements a template n-dimensional array class `ndArray`, focusing mainly on **four core features**:
 
-- Handle memory properly, either assuming ownership (ie dealing with deallocation) or acting as a passive handle on a given allocation;
-- Handle both shallow and deep copies efficiently and reliably;
-- Provide efficient and natural multi-dimensional accessors to the contents of the array;
+- Flexible memory management, either assuming ownership (ie dealing with deallocation) or acting as a passive handle on a given allocation;
+- Handle shallow and deep copies;
+- Provide natural (and efficient) multi-dimensional accessors to the contents of the array;
 - Provide detailed access to the dimensions of the array.
 
-In the following, we describe the interface provided by this class and give simple usage examples. Note that the file `test_mexArray` contains additional examples of usage.
+In the following, we describe the interface provided by this class and give simple usage examples. Note that the file `test_ndArray` contains additional examples of usage.
 
 ### The `ndArray` template class
 
@@ -25,13 +25,17 @@ The `ndArray` template class requires **two** template parameters:
 1. `typename T`: the value-type (eg. `double`, `char`, or any user-defined/STL class). This type can be `const`-qualified to prevent underlying elements from being mutated (useful with Matlab inputs for instance, cf examples).
 2. `unsigned N`: the number of dimensions of the array, any number greater than 1.
 
-Once the dimensionality of an array (`N`) is set, it cannot be modified, so you'll have to declare several arrays to deal with 2D and 3D matrices for example. The members of `ndArray<T,N>` are:
+Once the dimensionality `N` of an array is set, it cannot be modified, so you'll have to declare several arrays to deal with 2D and 3D matrices for example. The members of `ndArray<T,N>` are:
 - `unsigned m_numel`: the number of elements stored in the array;
 - `unsigned m_size[N]`: the dimensions of the array (similar to Matlab's `size()` function);
 - `unsigned m_strides[N]`: the index-offsets in each dimension, typcially `[1 cumprod(size(1:N-1))]`;
 - `std::shared_ptr<T>`: the actual data, stored as a plain 1D array of length `m_numel`.
 
 Note that the indexing convention is similar to that of Matlab: the second element in `m_data` corresponds to the coordinates `(2,1,...)` (ie **row-first/column-wise**).
+
+#### Deactivating Matlab support
+
+Simply comment the definition of the flag `ND_ARRAY_USING_MATLAB`.
 
 #### Handling memory
 
@@ -62,7 +66,7 @@ Note that these methods are _unsafe_, and will segfault if:
 - Not enough inputs are given in method 4;
 - Indexes are out of bounds in unsafe mode.
 
-The flag `MEX_ARRAY_SAFE_ACCESS` can be commented in the sources to increase speed slightly (although this probably won't be the bottleneck of your program).
+The flag `ND_ARRAY_SAFE_ACCESS` can be commented in the sources to increase speed slightly (although this probably won't be the bottleneck of your program).
 
 #### Iterating over the data
 
