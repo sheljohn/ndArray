@@ -1,4 +1,4 @@
-MexArray (beta)
+ndArray (beta)
 ========
 
 _This program was tested on Ubuntu 12.04 with Matlab R2012a and g++ 4.6.3, but should be cross-platform. Feel free to report bugs to the email specified in the sources._
