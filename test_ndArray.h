@@ -10,7 +10,7 @@
 #include "ndArray.h"
 #include <initializer_list>
 
-
+using namespace nd;
 
 /**
  * Print the contents of a 2-dimensional array.

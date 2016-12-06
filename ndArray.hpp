@@ -3,7 +3,7 @@
  * Performs a shallow copy of the other instance.
  * For deep-copies, see copy() below.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 ndArray<T,N>& ndArray<T,N>::operator=( const self& other )
 {
 	if ( other.m_data != m_data )
@@ -24,21 +24,21 @@ ndArray<T,N>& ndArray<T,N>::operator=( const self& other )
 // ------------------------------------------------------------------------
 
 /**
- * Performs a deep-copy of another instance with possibly 
- * different value-type. Deep copies are allowed only if 
- * the pointer type is non-const (otherwise no assignment 
- * is possible). 
+ * Performs a deep-copy of another instance with possibly
+ * different value-type. Deep copies are allowed only if
+ * the pointer type is non-const (otherwise no assignment
+ * is possible).
  *
- * To perform the copy, a new memory allocation is requested 
- * to store as many values as other.m_numel; the current 
- * instance takes ownership of this new memory. 
- * 
+ * To perform the copy, a new memory allocation is requested
+ * to store as many values as other.m_numel; the current
+ * instance takes ownership of this new memory.
+ *
  * Note that subsequent shallow copies (see assignment operator)
- * will simply share this ownership (reference counting). 
+ * will simply share this ownership (reference counting).
  * Note also that this code might generate warnings because of
  * the value-cast performed on the values of other.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 template <typename U>
 void ndArray<T,N>::copy( const ndArray<U,N>& other )
 {
@@ -58,7 +58,7 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
 		auto dst = begin(); auto src = other.cbegin();
 		for ( ;src != other.cend(); ++src, ++dst )  *dst = (T) *src;
 	}
-	else 
+	else
 		throw std::logic_error("Const values cannot be assigned!");
 }
 
@@ -68,10 +68,10 @@ void ndArray<T,N>::copy( const ndArray<U,N>& other )
  * Reset shared pointer.
  * This will trigger the deletion of the underlying memory if
  * m_data is unique (m_data.use_count() == 1). Note that if the
- * data was assigned with 'manage' set to false (see below), 
+ * data was assigned with 'manage' set to false (see below),
  * the deleter(no_delete functor) will NOT release the memory.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::clear()
 {
 	m_data.reset();
@@ -80,10 +80,10 @@ void ndArray<T,N>::clear()
 // ------------------------------------------------------------------------
 
 /**
- * More thorough cleanup. Calls clear() (see above), and sets 
+ * More thorough cleanup. Calls clear() (see above), and sets
  * all the rest to 0.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::reset()
 {
 	clear();
@@ -97,11 +97,11 @@ void ndArray<T,N>::reset()
 /**
  * Swap contents with another ndArray.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::swap( self& other )
 {
 	std::swap( m_numel, other.m_numel );
-	for ( unsigned i = 0; i < N; ++i )
+	for ( dimen_t i = 0; i < N; ++i )
 	{
 		std::swap( m_size[i], other.m_size[i] );
 		std::swap( m_strides[i], other.m_strides[i] );
@@ -113,25 +113,25 @@ void ndArray<T,N>::swap( self& other )
 
 /**
  * Internal method (protected) to assign the shared pointer.
- * Dimensions are assumed to be taken care of by the public 
+ * Dimensions are assumed to be taken care of by the public
  * assign variants (see below); only the pointer, it's length
  * and the flag 'manage' are required here.
  *
- * 'manage' allows to specify whether or not the shared pointer 
- * should release the memory when the last refering instance is 
- * destroyed. 
- * 
- * If true, the default deleter std::default_delete will be 
- * assigned to the shared pointer. Note that this deleter releases 
- * memory allocated USING NEW ONLY; 
- * 	DO NOT use malloc/calloc or other C allocation variants. 
- * 
- * If false, the deleter no_delete is given instead; this will NOT 
- * release the memory when the last refering instance is destroyed. 
- * Use only with either externally managed (eg Matlab) or static 
+ * 'manage' allows to specify whether or not the shared pointer
+ * should release the memory when the last refering instance is
+ * destroyed.
+ *
+ * If true, the default deleter std::default_delete will be
+ * assigned to the shared pointer. Note that this deleter releases
+ * memory allocated USING NEW ONLY;
+ * 	DO NOT use malloc/calloc or other C allocation variants.
+ *
+ * If false, the deleter no_delete is given instead; this will NOT
+ * release the memory when the last refering instance is destroyed.
+ * Use only with either externally managed (eg Matlab) or static
  * allocations.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
 {
 	if (manage)
@@ -149,15 +149,15 @@ void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
  * This will simply HANDLE the memory allocated by the mxArray,
  * not manage it; no deep-copy will be performed, no dynamic
  * allocation will occur, and no deallocation will happen when
- * this instance (or any shallow copy) is destroyed. 
- * 
- * Use this method to handle Matlab inputs, eg: 
- * 	
+ * this instance (or any shallow copy) is destroyed.
+ *
+ * Use this method to handle Matlab inputs, eg:
+ *
  * 	ndArray<const double,2> matrix( plhs[0] );
  *  (note that T is a const type to preserve input data)
- *  
- * or to handle Matlab outputs, eg: 
- * 
+ *
+ * or to handle Matlab outputs, eg:
+ *
  * 	const int size[5] = {10,11,12,13,14};
  * 	prhs[0] = mxCreateNumericArray(
  * 		5, size, mx_type<float>::id, mxREAL );
@@ -167,17 +167,17 @@ void ndArray<T,N>::assign_shared( pointer ptr, bool manage )
  * If the input type or number of dimensions does not correspond
  * to the template parameters, exceptions are raised.
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::assign( const mxArray *A )
 {
 	// Check dimensions and type
-	if ( ((unsigned) mxGetNumberOfDimensions(A)) != N )
+	if ( ((dimen_t) mxGetNumberOfDimensions(A)) != N )
 		throw std::domain_error("Bad dimensions.");
 	if ( mxGetClassID(A) != mx_type<T>::id )
-		throw std::invalid_argument("Type mismatch.");	
+		throw std::invalid_argument("Type mismatch.");
 
 	// Get input dimensions
-	const unsigned *size = (const unsigned*) mxGetDimensions(A);
+	index_ptr size = (index_ptr) mxGetDimensions(A);
 
 	// Call assign variant
 	assign( (pointer) mxGetData(A), size, false );
@@ -192,24 +192,24 @@ void ndArray<T,N>::assign( const mxArray *A )
  *
  * If manage == true, the internal shared pointer m_data
  * will assume ownership of the memory pointed by ptr, and
- * try to release it using delete[] when the last refering 
- * instance gets destroyed. 
- * If ptr is dynamically allocated, make sure that the 
- * allocation is performed with NEW, and NOT C variants 
+ * try to release it using delete[] when the last refering
+ * instance gets destroyed.
+ * If ptr is dynamically allocated, make sure that the
+ * allocation is performed with NEW, and NOT C variants
  * like malloc/calloc/etc.
  *
  * If manage == false, a dummy deleter (no_delete functor) is
- * passed to the shared pointer; nothing happens to the memory 
+ * passed to the shared pointer; nothing happens to the memory
  * pointed by ptr when the last refering instance gets destroyed.
  */
-template <typename T, unsigned N>
-void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )
+template <typename T, dimen_t N>
+void ndArray<T,N>::assign( pointer ptr, index_ptr size, bool manage )
 {
 	if ( ptr != data() )
 	{
 		// Compute internal dimensions
-		m_numel = 1; 
-		for ( unsigned i = 0; i < N; ++i )
+		m_numel = 1;
+		for ( dimen_t i = 0; i < N; ++i )
 		{
 			m_size[i] = size[i];
 			m_numel  *= size[i];
@@ -224,16 +224,16 @@ void ndArray<T,N>::assign( pointer ptr, const unsigned *size, bool manage )
 // ------------------------------------------------------------------------
 
 /**
- * Simply prints information about the dimensions of the 
+ * Simply prints information about the dimensions of the
  * n-dimensional array (size & number of elements).
  */
-template <typename T, unsigned N>
+template <typename T, dimen_t N>
 void ndArray<T,N>::info() const
 {
 	if ( m_data )
 	{
 		printf("%u-dimensional array of size (%u", N, m_size[0]);
-		for ( unsigned d = 1; d < N; ++d )
+		for ( dimen_t d = 1; d < N; ++d )
 			printf(", %u", m_size[d]);
 		printf(") = %u elements.\n", m_numel);
 	}

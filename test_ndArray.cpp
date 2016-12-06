@@ -4,8 +4,8 @@ void mexFunction(	int nargout, mxArray *out[],
 					int nargin, const mxArray *in[] )
 {
 	// Declare local variables
-	unsigned nr, nc, ar, ac;
-	int bsize[3];
+	mwSize nr, nc, ar, ac;
+	mwSize bsize[3];
 
 	ndArray<const double,2> A;
 	ndArray<float,3> B;
@@ -22,12 +22,12 @@ void mexFunction(	int nargout, mxArray *out[],
 
 		// Print info about dimensions of input
 		printf("\n-----\nDimensions of input: ");
-		A.info(); 
+		A.info();
 
 		// Print the input matrix
 		print_matrix(A);
 
-		// If an output is passed, generate a matrix that's half the size 
+		// If an output is passed, generate a matrix that's half the size
 		// in the largest dimension
 		if ( nargout > 0 )
 		{
